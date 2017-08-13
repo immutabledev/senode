@@ -1,0 +1,21 @@
+{
+	"name": "garage",
+	"sensors": [
+	  {
+		"ds120b": [
+		  {
+			"name": "freezer",
+			"address": "28-00042b31f0ff"
+		  },
+		  {
+			"name": "fridge",
+			"address": "28-00042e0895ff"
+		  },
+		  {
+			"name": "chest freezer",
+			"address": ""
+		  }
+		]
+	  }
+	]
+}
