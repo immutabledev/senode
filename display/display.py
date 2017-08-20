@@ -17,6 +17,8 @@ temp2 = "---"
 temp3 = "---"
 temp = "---"
 humidity = "---"
+current1 = "---"
+current2 = "---"
 
 def main():
     serial = spi()
@@ -71,13 +73,23 @@ def main():
                 except:
                     h = "---"
 
+                try:
+                    c1 = "{:03.1f}".format(float(current1))
+                except:
+                    c1 = "---"
+
+                try:
+                    c2 = "{:03.1f}".format(float(current2))
+                except:
+                    c2 = "---"
+
                 draw.text((margin, 14), t1+"F", font=fontLarge, fill="white")
                 draw.text((margin, 32), t2+"F", font=fontLarge, fill="white")
                 draw.text((margin, 50), t3+"F", font=fontLarge, fill="white")
 
-                draw.text((52, 24), "1.2A", font=font, fill="white")
+                draw.text((52, 24), c1+"A", font=font, fill="white")
 
-                draw.text((52, 52), "0.8A", font=font, fill="white")
+                draw.text((52, 52), c2+"A", font=font, fill="white")
 
                 draw.text((90, 14), "S:100%", font=font, fill="white")
 
@@ -141,6 +153,31 @@ def background_th():
             humidity = str(int(round(float(val))))
 #            print "New Humidity: ["+humidity+"]\n"
 
+def background_current():
+    global current1
+    global current2
+
+    ctx = zmq.Context()
+    sub = ctx.socket(zmq.SUB)
+    sub.connect("tcp://127.0.0.1:3002")
+
+    sub.setsockopt(zmq.SUBSCRIBE, "current1")
+    sub.setsockopt(zmq.SUBSCRIBE, "current2")
+
+    while True:
+        string = sub.recv_string()
+#        print "Recv: ["+string+"]\n"
+        sensor, val = string.split()
+
+        if sensor == "current1":
+            current1 = str(float(val))
+#            print "Current 1: ["+current1+"]\n"
+
+        if sensor == "current2":
+            current2 = str(float(val))
+#            print "Current 2: ["+current2+"]\n"
+
+
 if __name__ == "__main__":
     try:
         thread1 = threading.Thread(target=background, args=())
@@ -150,6 +187,10 @@ if __name__ == "__main__":
         thread2 = threading.Thread(target=background_th, args=())
         thread2.daemon = True
         thread2.start()
+
+	thread3 = threading.Thread(target=background_current, args=())
+        thread3.daemon = True
+        thread3.start()
 
         main()
     except KeyboardInterrupt:
