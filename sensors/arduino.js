@@ -15,12 +15,12 @@ function getArduinoData() {
 		var validity = data[8];
 
 		if (validity & 0x1) {
-			sock.send('current1'+' '+f1);
+			sock.send(['current1',f1]);
 //			console.log("Current 1: ["+f1+"]");
 		}
 
 		if (validity & 0x2) {
-			sock.send('current2'+' '+f2);
+			sock.send(['current2',f2]);
 //			console.log("Current 2: ["+f2+"]");
 		}
 	});
