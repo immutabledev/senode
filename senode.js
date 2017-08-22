@@ -175,7 +175,7 @@ function determineValidity() {
 }
 
 function heartBeat() {
-	sendToDisplay("heartbeat", status);
+	sendToDisplay("heartbeat", status, 1);
 }
 
 function sendToDisplay(topic, message, validity) {

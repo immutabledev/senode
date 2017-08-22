@@ -82,36 +82,43 @@ def main():
                         try:
                             t1 = "{:3d}".format(int(round(float(temp1))))
                         except:
+			    pass
 		   
 		    if temp2_v: 
                         try:
                             t2 = "{:3d}".format(int(round(float(temp2))))
                         except:
+			    pass
                    
                     if temp3_v:
                 	try:
                     	    t3 = "{:3d}".format(int(round(float(temp3))))
                 	except:
+			    pass
 
 		    if temp_v:
                 	try:
                     	    t = "{:3d}".format(int(round(float(temp))))
                 	except:
+			    pass
 
-		    if humdity_v:
+		    if humidity_v:
                 	try:
                     	    h = "{:3d}".format(int(round(float(humidity))))
                 	except:
+			    pass
 
 		    if current1_v:
                 	try:
                     	    c1 = "{:03.1f}".format(float(current1))
                 	except:
+			    pass
 
 		    if current2_v:
                 	try:
                     	    c2 = "{:03.1f}".format(float(current2))
                 	except:
+			    pass
 
                 draw.text((margin, 14), t1+"F", font=fontLarge, fill="white")
                 draw.text((margin, 32), t2+"F", font=fontLarge, fill="white")
@@ -131,12 +138,19 @@ def main():
 
 def background():
     global temp1
+    global temp1_v
     global temp2
+    global temp2_v
     global temp3
+    global temp3_v
     global temp
+    global temp_v
     global humidity
+    global humidity_v
     global current1
+    global current1_v
     global current2
+    global current2_v
     global heartbeat_ts
     global status
 
@@ -155,7 +169,7 @@ def background():
 
     while True:
         string = sub.recv_string()
-        print "Recv: ["+string+"]\n"
+#        print "Recv: ["+string+"]\n"
         sensor, val, v = string.split()
 
         if sensor == "temp1":
@@ -196,7 +210,7 @@ def background():
         if sensor == "heartbeat":
             heartbeat_ts = int(time.time())
             system_status = int(val)
-            print "Heartbeat: ["+str(heartbeat_ts)+"]"
+#            print "Heartbeat: ["+str(heartbeat_ts)+"]"
 
 def background_th():
     global temp
