@@ -2,9 +2,13 @@ var zmq = require('zmq'),
   s_therm = zmq.socket('sub'),
   s_env = zmq.socket('sub'),
   s_current = zmq.socket('sub'),
+  s_distance = zmq.socket('sub'),
   publish = zmq.socket('pub');
 
 var DEBUG = 0;
+
+const DISTANCE_LOW = 8;
+const DISTANCE_HIGH = 16;
 
 // Define indecies into Arrays
 var TEMP1 = 0,
@@ -13,15 +17,16 @@ var TEMP1 = 0,
     TEMPERATURE = 3,
     HUMIDITY = 4,
     CURRENT1 = 5,
-    CURRENT2 = 6;
-var NUM_ELEMENTS = 7;
+    CURRENT2 = 6,
+    DISTANCE = 7;
+var NUM_ELEMENTS = 8;
 
 var TIMEOUT = 60;                     // After 60 seconds of stale data, a sensor value is declared invalid
 
 var values = Array(NUM_ELEMENTS);     // String representation of data
 var lastUpdate = Array(NUM_ELEMENTS); // Unix timestamp of last update received 
 var validity = Array(NUM_ELEMENTS);   // True/False validity if the currently stored data is valid
-var topics = ["temp1","temp2","temp3","temperature","humidity","current1","current2"];
+var topics = ["temp1","temp2","temp3","temperature","humidity","current1","current2","distance"];
 
 var status = 0;                       // Overall status of the system; 0=no issues
 
@@ -47,16 +52,18 @@ s_current.connect('tcp://127.0.0.1:3002');
 s_current.subscribe('current1');
 s_current.subscribe('current2');
 
+s_distance.connect('tcp://127.0.0.1:3003');
+s_distance.subscribe('distance');
+
 s_therm.on('message', function(topic, message) {
 	var temp1 = "---";
 	var temp2 = "---";
 	var temp3 = "---";
-	var ts = Math.floor(Date.now()/1000); 
 
 	if (DEBUG) console.log("(THERM)["+topic+"] ["+message+"]\n");
 	if (topic == "temp1") {
 		try {
-			var temp1_i = parseFloat(message);
+			var temp1_i = parseFloat(message).toFixed(1);
 			if (temp1_i < 120.0 && temp1_i > -30.0) {
 				temp1 = temp1_i.toString();
 			} else {
@@ -65,12 +72,10 @@ s_therm.on('message', function(topic, message) {
 		} catch(e) {
 			temp1 = "---";
 		}
-		values[TEMP1] = temp1;
-		lastUpdate[TEMP1] = ts;
-		sendToDisplay("temp1",temp1,1);
+		updateData(TEMP1, temp1);
 	} else if (topic == "temp2") {
 		try {
-                        var temp2_i = parseFloat(message);
+                        var temp2_i = parseFloat(message).toFixed(1);
                         if (temp2_i < 120.0 && temp2_i > -30.0) {
                                 temp2 = temp2_i.toString();
                         } else {
@@ -79,12 +84,10 @@ s_therm.on('message', function(topic, message) {
                 } catch(e) {
                         temp2 = "---";
                 }
-                values[TEMP2] = temp2;
-		lastUpdate[TEMP2] = ts;
-		sendToDisplay("temp2",temp2,1);
+		updateData(TEMP2, temp2);
 	} else if (topic == "temp3") {
 		try {
-                        var temp3_i = parseFloat(message);
+                        var temp3_i = parseFloat(message).toFixed(1);
                         if (temp3_i < 120.0 && temp3_i > -30.0) {
                                 temp3 = temp3_i.toString();
                         } else {
@@ -93,9 +96,7 @@ s_therm.on('message', function(topic, message) {
                 } catch(e) {
                         temp3 = "---";
                 }
-                values[TEMP3] = temp3;
-		lastUpdate[TEMP3] = ts;
-		sendToDisplay("temp3",temp3,1);
+		updateData(TEMP3, temp3);
 	}
 
 });
@@ -105,28 +106,23 @@ s_env.on('message', function(topic, message) {
 
 	var temp = "---";
 	var humidity = "---";
-	var ts = Math.floor(Date.now()/1000);
 
 	if (topic == "temperature") {
 		try {
-			var t_i = parseFloat(message);
+			var t_i = parseFloat(message).toFixed(1);
 			if (t_i < 130.0 && t_i > -20.0) {
 				temp = t_i.toString();
 			}
 		} catch(e) { }
-		values[TEMPERATURE] = temp;
-		lastUpdate[TEMPERATURE] = ts;
-		sendToDisplay("temperature",temp,1);
+		updateData(TEMPERATURE, temp);
 	} else if (topic == "humidity") {
 		try {
-                        var h_i = parseFloat(message);
+                        var h_i = parseFloat(message).toFixed(1);
                         if (h_i <= 100.0 && h_i >= 0.0) {
                                 humidity = h_i.toString();
                         }
                 } catch(e) { }  
-                values[HUMIDITY] = humidity;
-                lastUpdate[HUMIDITY] = ts;
-                sendToDisplay("humidity",humidity,1);
+		updateData(HUMIDITY, humidity);
 	}
 });
 
@@ -135,37 +131,59 @@ s_current.on('message', function(topic, message) {
 
 	var current1 = "---";
         var current2 = "---";
-        var ts = Math.floor(Date.now()/1000);
 
         if (topic == "current1") {
                 try {
-                        var c1_i = parseFloat(message);
-                        if (c1_i <= 10.0 && c1_i >= 0.0) {
+                        var c1_i = parseFloat(message).toFixed(1);
+                        if (c1_i < 10.0 && c1_i >= 0.0) {
                                 current1 = c1_i.toString();
                         }
                 } catch(e) { }
-                values[CURRENT1] = current1;
-                lastUpdate[CURRENT1] = ts;
-                sendToDisplay("current1",current1,1);
+		updateData(CURRENT1, current1);
         } else if (topic == "current2") {
                 try {
-                        var c2_i = parseFloat(message);
+                        var c2_i = parseFloat(message).toFixed(1);
                         if (c2_i <= 10.0 && c2_i >= 0.0) {
                                 current2 = c2_i.toString();
                         }
                 } catch(e) { }
-                values[CURRENT2] = current2;
-                lastUpdate[CURRENT2] = ts;
-                sendToDisplay("current2",current2,1);
+		updateData(CURRENT2, current2);
         }
 });
+
+s_distance.on('message', function(topic, message) {
+        if (DEBUG) console.log("(DISTANCE)["+topic+"] ["+message+"]\n");
+
+	var distance = "---";
+
+	if (topic == "distance") {
+		var d = parseInt(message);
+console.log("DISTANCE: ["+d+"]");
+		if (d >= DISTANCE_LOW && d <= DISTANCE_HIGH) {
+			var p = 100 - ((d - DISTANCE_LOW) * 100) / (DISTANCE_HIGH - DISTANCE_LOW);
+			distance = Math.round(p).toString();
+console.log("["+distance+"%]");
+		} else {
+			distance = "---";
+		}
+	
+		updateData(DISTANCE, distance);
+	}
+});
+
+function updateData(index, data) {
+	values[index] = data;
+	lastUpdate[index] = Math.floor(Date.now()/1000);
+	sendToDisplay(topics[index], data, 1);
+
+}
 
 function determineValidity() {
 	var current = Math.floor(Date.now()/1000);
 
 	for(var i=0; i<NUM_ELEMENTS; i++) {
 		if ((current-lastUpdate[i]) > TIMEOUT) {
-			console.log("["+i+"] ["+current+"]["+lastUpdate[i]+"]");
+			if (DEBUG) console.log("["+i+"] ["+current+"]["+lastUpdate[i]+"]");
 			validity[i] = 0;
 			sendToDisplay(topics[i], values[i], 0);
 		} else {
@@ -180,6 +198,7 @@ function heartBeat() {
 
 function sendToDisplay(topic, message, validity) {
 	if (DEBUG) console.log("sendToDisplay("+topic+","+message+" "+validity+")");
+	//publish.send([topic,message+" "+validity]);
 	publish.send(topic+" "+message+" "+validity);
 }
 

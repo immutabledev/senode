@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 
@@ -26,6 +26,8 @@ current1 = "---"
 current1_v = 0
 current2 = "---"
 current2_v = 0
+distance = "---"
+distance_v = 0
 
 system_status = 0
 heartbeat_ts = 0
@@ -55,70 +57,71 @@ def main():
 
                 margin = 4
 
-                cx = 30
-                cy = min(device.height, 64) / 2
-
-                left = cx - cy
-                right = cx + cy
-
                 draw.text((margin, 0), today_date, font=font, fill="white")
                 draw.text((80, 0), today_time, font=font, fill="white")
 
-		t1 = "---"
+                t1 = "---"
                 t2 = "---"
                 t3 = "---"
                 t = "---"
                 h = "---"
                 c1 = "---"
                 c2 = "---"
+                d = "---"
 
                 # If time since last heartbeat is greater than 60 seconds
                 ts = int(time.time())
 
-		if (ts - heartbeat_ts) > 60:
-		    draw.text((90, 56), "E:COMM", font=font, fill="white")
+                if (ts - heartbeat_ts) > 30:
+                    draw.text((90, 56), "E:COMM", font=font, fill="white")
                 else:
-		    if temp1_v:
+                    if temp1_v:
                         try:
                             t1 = "{:3d}".format(int(round(float(temp1))))
                         except:
-			    pass
-		   
-		    if temp2_v: 
+                               pass
+           
+                    if temp2_v: 
                         try:
                             t2 = "{:3d}".format(int(round(float(temp2))))
                         except:
-			    pass
+                            pass
                    
                     if temp3_v:
-                	try:
-                    	    t3 = "{:3d}".format(int(round(float(temp3))))
-                	except:
-			    pass
+                        try:
+                            t3 = "{:3d}".format(int(round(float(temp3))))
+                        except:
+                            pass
 
-		    if temp_v:
-                	try:
-                    	    t = "{:3d}".format(int(round(float(temp))))
-                	except:
-			    pass
+                    if temp_v:
+                        try:
+                            t = "{:3d}".format(int(round(float(temp))))
+                        except:
+                            pass
 
-		    if humidity_v:
-                	try:
-                    	    h = "{:3d}".format(int(round(float(humidity))))
-                	except:
-			    pass
+                    if humidity_v:
+                        try:
+                            h = "{:3d}".format(int(round(float(humidity))))
+                        except:
+                            pass
 
-		    if current1_v:
-                	try:
-                    	    c1 = "{:03.1f}".format(float(current1))
-                	except:
-			    pass
+                    if current1_v:
+                        try:
+                            c1 = "{:03.1f}".format(float(current1))
+                        except:
+                            pass
 
-		    if current2_v:
-                	try:
-                    	    c2 = "{:03.1f}".format(float(current2))
-                	except:
-			    pass
+                    if current2_v:
+                        try:
+                            c2 = "{:03.1f}".format(float(current2))
+                        except:
+                            pass
+	
+                    if distance_v:
+                       try:
+                           d = "{:3d}".format(int(distance));
+                       except:
+                           pass
 
                 draw.text((margin, 14), t1+"F", font=fontLarge, fill="white")
                 draw.text((margin, 32), t2+"F", font=fontLarge, fill="white")
@@ -128,7 +131,7 @@ def main():
 
                 draw.text((52, 52), c2+"A", font=font, fill="white")
 
-                draw.text((90, 14), "S:100%", font=font, fill="white")
+                draw.text((90, 14), "S:"+d+"%", font=font, fill="white")
 
                 draw.text((90, 24), "T:"+t+"F", font=font, fill="white")
 
@@ -151,6 +154,8 @@ def background():
     global current1_v
     global current2
     global current2_v
+    global distance
+    global distance_v
     global heartbeat_ts
     global status
 
@@ -158,14 +163,15 @@ def background():
     sub = ctx.socket(zmq.SUB)
     sub.connect("tcp://127.0.0.1:4000")
 
-    sub.setsockopt(zmq.SUBSCRIBE, "temp1")
-    sub.setsockopt(zmq.SUBSCRIBE, "temp2")
-    sub.setsockopt(zmq.SUBSCRIBE, "temp3")
-    sub.setsockopt(zmq.SUBSCRIBE, "temperature")
-    sub.setsockopt(zmq.SUBSCRIBE, "humidity")
-    sub.setsockopt(zmq.SUBSCRIBE, "current1")
-    sub.setsockopt(zmq.SUBSCRIBE, "current2")
-    sub.setsockopt(zmq.SUBSCRIBE, "heartbeat")
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'temp1')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'temp2')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'temp3')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'temperature')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'humidity')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'current1')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'current2')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'distance')
+    sub.setsockopt_string(zmq.SUBSCRIBE, 'heartbeat')
 
     while True:
         string = sub.recv_string()
@@ -179,7 +185,7 @@ def background():
 
         if sensor == "temp2":
             temp2 = val
-	    temp2_v = int(v) 
+        temp2_v = int(v) 
 #            print "New Temp2: ["+temp2+"]\n"
 
         if sensor == "temp3":
@@ -206,6 +212,9 @@ def background():
             current2 = val
             current2_v = int(v) 
 #            print "Current 2: ["+current2+"]\n"
+        if sensor == "distance":
+            distance = val
+            distance_v = int(v)
 
         if sensor == "heartbeat":
             heartbeat_ts = int(time.time())
