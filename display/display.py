@@ -47,17 +47,15 @@ def main():
 
     while True:
         now = datetime.datetime.now()
-        today_date = now.strftime("%d %b %y")
+        today_date = now.strftime("%b %d, %Y")
         today_time = now.strftime("%H:%M:%S")
         if today_time != today_last_time:
             today_last_time = today_time
             with canvas(device) as draw:
-                now = datetime.datetime.now()
-                today_date = now.strftime("%b %d, %y")
+                #now = datetime.datetime.now()
+                #today_date = now.strftime("%b %d, %Y")
 
-                margin = 4
-
-                draw.text((margin, 0), today_date, font=font, fill="white")
+                draw.text((0, 0), today_date, font=font, fill="white")
                 draw.text((80, 0), today_time, font=font, fill="white")
 
                 t1 = "---"
@@ -79,7 +77,7 @@ def main():
                         try:
                             t1 = "{:3d}".format(int(round(float(temp1))))
                         except:
-                               pass
+                            pass
            
                     if temp2_v: 
                         try:
@@ -123,9 +121,9 @@ def main():
                        except:
                            pass
 
-                draw.text((margin, 14), t1+"F", font=fontLarge, fill="white")
-                draw.text((margin, 32), t2+"F", font=fontLarge, fill="white")
-                draw.text((margin, 50), t3+"F", font=fontLarge, fill="white")
+                draw.text((0, 14), t1+"F", font=fontLarge, fill="white")
+                draw.text((0, 32), t2+"F", font=fontLarge, fill="white")
+                draw.text((0, 50), t3+"F", font=fontLarge, fill="white")
 
                 draw.text((52, 24), c1+"A", font=font, fill="white")
 
@@ -221,68 +219,12 @@ def background():
             system_status = int(val)
 #            print "Heartbeat: ["+str(heartbeat_ts)+"]"
 
-def background_th():
-    global temp
-    global humidity 
-
-    ctx = zmq.Context()
-    sub = ctx.socket(zmq.SUB)
-    sub.connect("tcp://127.0.0.1:3001")
-
-    sub.setsockopt(zmq.SUBSCRIBE, "temp")
-    sub.setsockopt(zmq.SUBSCRIBE, "humidity")
-
-    while True:
-        string = sub.recv_string()
-#        print "Recv: ["+string+"]\n"
-        sensor, val = string.split()
-
-        if sensor == "temp":
-            temp = str(int(round(float(val))))
-#            print "New Temp: ["+temp+"]\n"
-
-        if sensor == "humidity":
-            humidity = str(int(round(float(val))))
-#            print "New Humidity: ["+humidity+"]\n"
-
-def background_current():
-    global current1
-    global current2
-
-    ctx = zmq.Context()
-    sub = ctx.socket(zmq.SUB)
-    sub.connect("tcp://127.0.0.1:3002")
-
-    sub.setsockopt(zmq.SUBSCRIBE, "current1")
-    sub.setsockopt(zmq.SUBSCRIBE, "current2")
-
-    while True:
-        string = sub.recv_string()
-#        print "Recv: ["+string+"]\n"
-        sensor, val = string.split()
-
-        if sensor == "current1":
-            current1 = str(float(val))
-#            print "Current 1: ["+current1+"]\n"
-
-        if sensor == "current2":
-            current2 = str(float(val))
-#            print "Current 2: ["+current2+"]\n"
-
 
 if __name__ == "__main__":
     try:
         thread1 = threading.Thread(target=background, args=())
         thread1.daemon = True
         thread1.start()
-
-#        thread2 = threading.Thread(target=background_th, args=())
-#        thread2.daemon = True
-#        thread2.start()
-
-#        thread3 = threading.Thread(target=background_current, args=())
-#        thread3.daemon = True
-#        thread3.start()
 
         main()
     except KeyboardInterrupt:
